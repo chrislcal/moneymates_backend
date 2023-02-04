@@ -1,36 +1,44 @@
+// Importing libraries
+const {SECRET_ID, SECRET_KEY, TOKEN_URL} = require('./keys');
+const express = require("express");
+const cors = require("cors");
 
-const express = require('express');
-const cors = require('cors');
+const PORT = process.env.PORT || 3000;
 const app = express();
 
-const port = 3000;
-
+// Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "*" }));
 
 
-app.get('/', (req, res) => {
-    res.send('main page');
+// Endpoint for getting access-token
+app.get("/get-token", async (req, res) => {
+  try {
+    const request = await fetch(TOKEN_URL, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+        accept: "application/json",
+      },
+      body: JSON.stringify({
+        secret_id: SECRET_ID,
+        secret_key: SECRET_KEY
+      }),
+    });
+    const response = await request.json();
+    res.json(response);
+
+  } catch (error) {
+    res.status(500).send("Unable to get data");
+    console.log(error);
+  }
 });
 
-app.get('/', (req,res) => {
-    res.send('')
-})
 
-app.get('/', (req, res) => {
-    res.send('')
-})
-
-app.put('/', (req, res) => {
-    res.send('')
-})
-
-app.delete('/', (req, res) => {
-    res.send('')
-})
+// Run server
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
 
 
-
-app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
-})
