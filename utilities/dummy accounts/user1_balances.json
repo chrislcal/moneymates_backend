@@ -1,0 +1,18 @@
+{
+    "balances": [
+        {
+            "balanceAmount": {
+                "amount": "9539,50",
+                "currency": "NOK"
+            },
+            "balanceType": "interimAvailable"
+        },
+        {
+            "balanceAmount": {
+                "amount": "10538,30",
+                "currency": "NOK"
+            },
+            "balanceType": "interimBooked"
+        }
+    ]
+}
