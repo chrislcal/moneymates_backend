@@ -1,0 +1,12 @@
+{
+    "account": {
+        "resourceId": "NOJffjkfnwnDJF",
+        "iban": "NO27234583855390",
+        "bban": "65244386240",
+        "currency": "NOK",
+        "ownerName": "OLA NORDMANN",
+        "product": "BRUKSKONTO",
+        "status": "enabled",
+        "bic": "NDEANOKK"
+    }
+}
