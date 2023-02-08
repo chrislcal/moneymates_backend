@@ -1,10 +1,11 @@
 // Importing libraries
 const {SECRET_ID, SECRET_KEY, TOKEN_URL, AGREEMENT_URL, INSTITUTIONS_URL, REQUISITION_URL} = require('./utilities/keys');
-const {addTokens, returnToken, returnInstitutionId, returnRequisitionId, checkTokenStatus, saveInstitutionId, saveAgreementId, saveRequisitionId, returnAgreementId, saveAccounts} = require('./db')
+const {saveUserData, addTokens, returnToken, returnInstitutionId, returnRequisitionId, checkTokenStatus, saveInstitutionId, saveAgreementId, saveRequisitionId, returnAgreementId, saveAccounts} = require('./db')
+const axios = require('axios');
 const express = require("express");
 const cors = require("cors");
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const app = express();
 
 // Middleware
@@ -32,8 +33,23 @@ app.get('/user1_balances', (req,res) => {
 
 
 
-////////////////////////////// NORDIGEN API /////////////////////////////////////////////////
+/////////////////////////////// AUTH0 ////////////////////////////////////////////////////////
 
+app.post('/save-user-data', async (req, res) => {
+  const { user_id, email, nickname } = req.body;
+
+  const userData = {
+    user_id,
+    email,
+    nickname
+  }
+  await saveUserData(userData)
+});
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////// NORDIGEN API /////////////////////////////////////////////////
 
 // Endpoint for getting access and refresh-tokens
 app.get("/get-token", async (req, res) => {
@@ -185,13 +201,6 @@ app.get('/get-accounts', async(req, res) => {
     console.log(error);
   }
 });
-
-
-
-
-
-
-
 
 ///////////////////////////////////////////////////////////////////////
 
