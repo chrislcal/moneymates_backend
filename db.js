@@ -9,10 +9,15 @@ const pool = new Pool({
     password: DATABASE_PASSWORD,
     port: 5432,
 });
+
+
+
 //////////////AUTH0//////////////////////////////////////////////
+
 const saveUserData = async(body) => {
     
     try {
+
         const userResult = await pool.query(
           'select * from users where user_id = $1',
           [body.user_id]
@@ -30,13 +35,11 @@ const saveUserData = async(body) => {
 }
 
 
-////////////////////////////////////////////////////////////////
 
 //////////////NORDIGEN///////////////////////////////////////////
 
 // Add access_token, refresh_token
-const addTokens = async(data) => {
-    console.log('Adding tokens to database:', data);
+const addTokens = async(data, user_id) => {
     const query = 'UPDATE users SET access_token = $1, refresh_token = $2 WHERE user_id = $3';
     const values = [data.access, data.refresh, user_id];
     await pool.query(query, values);
@@ -44,11 +47,11 @@ const addTokens = async(data) => {
 
 
 // Check if tokens are present in db
-const checkTokenStatus =  async() => {
+const checkTokenStatus =  async(user_id) => {
     const result = await pool.query(
         `SELECT access_token, refresh_token
          FROM users
-         WHERE name = $1`, [user_id]
+         WHERE user_id = $1`, [user_id]
     );
 
     if(result.rows.length > 0 && result.rows[0].access_token && result.rows[0].refresh_token) {
@@ -58,9 +61,7 @@ const checkTokenStatus =  async() => {
     }
 };
 
-
-
-const saveInstitutionId = async(id) => {
+const saveInstitutionId = async(id, user_id) => {
     
     try{
         const result = await pool.query(`
@@ -74,14 +75,14 @@ const saveInstitutionId = async(id) => {
     }
 };
 
-const saveAgreementId = async(id) => {
+const saveAgreementId = async(id, user_id) => {
         const result = await pool.query(`
         UPDATE users
         SET agreement_id = $1
         WHERE user_id = $2;`, [id, user_id])
 }
 
-const saveRequisitionId = async(id) => {
+const saveRequisitionId = async(id, user_id) => {
     const result = await pool.query(`
     UPDATE users
     SET requisition_id = $1
@@ -89,7 +90,7 @@ const saveRequisitionId = async(id) => {
 }
 
 // Return access token
-const returnToken = async() => {
+const returnToken = async(user_id) => {
     const result = await pool.query(`
     SELECT access_token
     FROM users
@@ -98,7 +99,7 @@ const returnToken = async() => {
     return result.rows[0].access_token;
 };
 
-const returnAgreementId = async() => {
+const returnAgreementId = async(user_id) => {
     const result = await pool.query(`
     SELECT agreement_id
     FROM users
@@ -109,7 +110,7 @@ const returnAgreementId = async() => {
 
 
 
-const returnInstitutionId = async() => {
+const returnInstitutionId = async(user_id) => {
     const result = await pool.query(`
     SELECT institution_id
     FROM users
@@ -118,7 +119,7 @@ const returnInstitutionId = async() => {
     return result.rows[0].institution_id;
 };
 
-const returnRequisitionId = async() => {
+const returnRequisitionId = async(user_id) => {
     const result = await pool.query(`
     SELECT requisition_id
     FROM users
@@ -127,7 +128,7 @@ const returnRequisitionId = async() => {
     return result.rows[0].requisition_id;
 };
 
-const saveAccounts = async(accounts) => {
+const saveAccounts = async(accounts, user_id) => {
 
     for(let account of accounts) {
         await pool.query(`
