@@ -1,153 +1,61 @@
 // Importing libraries
-const {SECRET_ID, SECRET_KEY, TOKEN_URL} = require('./utilities/keys');
+const {
+  SECRET_ID, SECRET_KEY, TOKEN_URL,
+  AGREEMENT_URL, INSTITUTIONS_URL, REQUISITION_URL,} = require("./utilities/keys");
+
+const {
+  saveUserData, addTokens, returnToken, returnInstitutionId,
+  returnRequisitionId, checkTokenStatus, saveInstitutionId,
+  saveAgreementId, saveRequisitionId, returnAgreementId,
+  returnAccounts, saveAccounts} = require("./db");
+
+const jwt_decode = require("jwt-decode");
+const axios = require("axios");
 const express = require("express");
 const cors = require("cors");
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const app = express();
 
 // Middleware
 app.use(express.json());
 app.use(cors({ origin: "*" }));
 
+app.get("/", (req, res) => {
+  res.send("<h2>Welcome to the API</h2>");
+});
 
-/////////////// Dummy data //////////////////////////
+/////////////////////////////// AUTH0 ////////////////////////////////////////////////////////
 
-const user1_accounts = {
-  account: {
-      resourceId: "NOJffjkfnwnDJF",
-      iban: "NO27234583855390",
-      bban: "65244386240",
-      currency: "NOK",
-      ownerName: "OLA NORDMANN",
-      product: "BRUKSKONTO",
-      status: "enabled",
-      bic: "NDEANOKK"
+app.post("/save-user-data", async (req, res) => {
+  try {
+    const { email, nickname } = req.body;
+
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const userData = {
+      user_id,
+      email,
+      nickname,
+    };
+    await saveUserData(userData);
+  } catch (error) {
+    res.status(500).send(error.message);
   }
-}
+});
 
+////////////////////////////// NORDIGEN SERVER REQUESTS //////////////////////////////////
 
-const user1_balances = {
-  balances: [
-      {
-          balanceAmount: {
-              amount: "9539,50",
-              currency: "NOK"
-          },
-          balanceType: "interimAvailable"
-      },
-      {
-          balanceAmount: {
-              amount: "10538,30",
-              currency: "NOK"
-          },
-          balanceType: "interimBooked"
-      }
-  ]
-}
-
-const user1_transactions = {
-  transactions: {
-      booked: [
-          {
-              transactionId: "000000002428846284",
-              entryReference: "0000000022i4uy52338",
-              bookingDate: "2023-02-03",
-              valueDate: "2023-02-03",
-              transactionAmount: {
-                  amount: "-129.00",
-                  currency: "NOK"
-              },
-              remittanceInformationUnstructured: "658067868903 0202,NORMAL DRAMMEN GULDLISTEN 3 DRAMMEN",
-              remittanceInformationStructured: "658067868903 0202,NORMAL DRAMMEN GULDLISTEN 3 DRAMMEN",
-              additionalInformation: "Varekjøp",
-              internalTransactionId: "89dbfde7a7814f28dbefjdjsh384jb98"
-          },
-          {
-              transactionId: "000000002247382337",
-              entryReference: "000000002425888337",
-              bookingDate: "2023-02-03",
-              valueDate: "2023-02-03",
-              transactionAmount: {
-                  amount: "-79.60",
-                  currency: "NOK"
-              },
-              remittanceInformationUnstructured: "658067868888 0202,KIWI 570 GULSKO GULDLISTEN 3 DRAMMEN",
-              remittanceInformationStructured: "658033338903 0202,KIWI 570 GULSKO GULDLISTEN 3 DRAMMEN",
-              additionalInformation: "Varekjøp",
-              internalTransactionId: "34703734ae805j335af8fefh342f274e4"
-          },
-          {
-              transactionId: "000000002428555336",
-              entryReference: "000000002422242336",
-              bookingDate: "2023-02-03",
-              valueDate: "2023-02-03",
-              transactionAmount: {
-                  amount: "-18.90",
-                  currency: "NOK"
-              },
-              remittanceInformationUnstructured: "658065928903 0302,JOKER DRAMMEN T DRAMMEN STAS DRAMMEN",
-              remittanceInformationStructured: "655837868903 0302,JOKER DRAMMEN T DRAMMEN STAS DRAMMEN",
-              additionalInformation: "Overførsel",
-              internalTransactionId: "460a1750657jhg35f083eb159a3bf054a"
-          },
-          {
-              transactionId: "0000000024250255352947",
-              entryReference: "0000000024235022947",
-              bookingDate: "2023-01-31",
-              valueDate: "2023-01-31",
-              transactionAmount: {
-                  "amount": "838.00",
-                  "currency": "NOK"
-              },
-              debtorName: "KIWI 570 GULSKO GULDLISTEN 3",
-              remittanceInformationUnstructured: "NAV",
-              remittanceInformationStructured: "NAV",
-              additionalInformation: "Varekjøp",
-              internalTransactionId: "511c120418dcfdnfk345dc11bf329e5086c"
-          },
-          {
-              transactionId: "0000543853422443133",
-              entryReference: "00000000245i3i5133",
-              bookingDate: "2023-01-30",
-              valueDate: "2023-01-30",
-              transactionAmount: {
-                  amount: "-25.00",
-                  currency: "NOK"
-              },
-              remittanceInformationUnstructured: "Se spesifikasjoner på kontoutskrift ved månedslutt,KIWI 570 GULSKO GULDLISTEN 3 DRAMMEN",
-              remittanceInformationStructured: "Se spesifikasjoner på kontoutskrift ved månedslutt,KIWI 570 GULSKO GULDLISTEN 3 DRAMMEN",
-              additionalInformation: "Overførsel",
-              internalTransactionId: "738aa5efefef55aa1e05bef57ff6fa32"
-          }   
-      ],
-      pending: []
-  }
-}
-
-
-
-app.get('/user1_accounts', (req, res) => {
-  res.json(user1_accounts);
-})
-
-app.get('/user1_transactions', (req,res) => {
-  res.json(user1_transactions);
-})
-
-app.get('/user1_balances', (req,res) => {
-  res.json(user1_balances);
-})
-
-//////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-//////////////////////////////NORDIGEN API /////////////////////////////////////////////////
-
-// Endpoint for getting access-token
+// Endpoint for getting access and refresh-tokens
 app.get("/get-token", async (req, res) => {
   try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+
     const request = await fetch(TOKEN_URL, {
       method: "POST",
       mode: "cors",
@@ -157,22 +65,213 @@ app.get("/get-token", async (req, res) => {
       },
       body: JSON.stringify({
         secret_id: SECRET_ID,
-        secret_key: SECRET_KEY
+        secret_key: SECRET_KEY,
       }),
     });
     const response = await request.json();
-    res.json(response);
-
+    await addTokens(response, user_id);
+    res.status(200).send("Tokens added successfully");
   } catch (error) {
     res.status(500).send("Unable to get data");
     console.log(error);
   }
 });
 
+// Endpoint for verifying token status
+app.get("/check-token-status", async (req, res) => {
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const status = await checkTokenStatus(user_id);
+    res.json(status);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+// Endpoint for getting list of institutions
+app.get("/institutions", async (req, res) => {
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    // Getting access-token
+    const accessToken = await returnToken(user_id);
+
+    // Getting institutions using the token
+    const data = await fetch(INSTITUTIONS_URL, {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    const institutions = await data.json();
+    res.json(institutions);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+// Endpoint for storing selected institution id
+app.post("/save-institution-id", async (req, res) => {
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const id = req.body.id;
+
+    try {
+      await saveInstitutionId(id, user_id);
+      return res.send({ status: "success" });
+    } catch (error) {
+      return res.status(500).send({ status: "error" });
+    }
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+// Endpoint for getting and storing agreement_id
+app.get("/save-agreement-id", async (req, res) => {
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const accessToken = await returnToken(user_id);
+    const institutionId = await returnInstitutionId(user_id);
+
+    const request = await fetch(AGREEMENT_URL, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        institution_id: `${institutionId}`,
+        access_scope: ["balances", "details", "transactions"],
+      }),
+    });
+
+    const response = await request.json();
+    await saveAgreementId(response.id, user_id);
+    res.json(response);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Endpoint for getting requisition ID
+app.get("/save-requisition-id", async (req, res) => {
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const accessToken = await returnToken(user_id);
+    const institutionId = await returnInstitutionId(user_id);
+    const agreementId = await returnAgreementId(user_id);
+    console.log(agreementId);
+
+    const request = await fetch(REQUISITION_URL, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        redirect: "http://localhost:3000",
+        institution_id: `${institutionId}`,
+        agreement: `${agreementId}`,
+      }),
+    });
+
+    const response = await request.json();
+    await saveRequisitionId(response.id, user_id);
+    res.json(response);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Endpoint for saving accounts
+app.get("/save-accounts", async (req, res) => {
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const requisitionId = await returnRequisitionId(user_id);
+    const accessToken = await returnToken(user_id);
+
+    const response = await fetch(
+      `https://ob.nordigen.com/api/v2/requisitions/${requisitionId}`,
+      {
+        method: 'GET',
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log(data);
+    const accounts = data.accounts;
+    await saveAccounts(accounts, user_id);
+    res.json(accounts);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(error.message);
+  }
+});
+
+
+//      _   _  ____  _____  _____ _____ _____ ______ _   _ 
+//     | \ | |/ __ \|  __ \|  __ \_   _/ ____|  ____| \ | |
+//     |  \| | |  | | |__) | |  | || || |  __| |__  |  \| |
+//     | . ` | |  | |  _  /| |  | || || | |_ |  __| | . ` |
+//     | |\  | |__| | | \ \| |__| || || |__| | |____| |\  |
+//     |_| \_|\____/|_|  \_\_____/_____\_____|______|_| \_|
+
+/////////////////////// NORDIGEN FRONTEND API ENDPOINTS ////////////////////  
+
+// Get all user accounts 
+app.get('/user-accounts', async (req, res) => {
+
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const accounts = await returnAccounts(user_id);
+
+    res.json(accounts);
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+})
+
+
+
+// Get account details
+app.get('/account-details', (req, res) => {
+
+})
+
+
+app.get('/transactions')
+
+
 ///////////////////////////////////////////////////////////////////////
-
-
-
 
 // Run server
 app.listen(PORT, () => {
