@@ -244,7 +244,7 @@ app.get("/save-accounts", async (req, res) => {
 /////////////////////// NORDIGEN FRONTEND API ENDPOINTS ////////////////////  
 
 // Get all user accounts 
-app.get('/user-accounts', async (req, res) => {
+app.get('/get-accounts', async (req, res) => {
 
   try {
     const token = req.headers["token"];
@@ -260,15 +260,6 @@ app.get('/user-accounts', async (req, res) => {
   }
 })
 
-
-
-// Get account details
-app.get('/account-details', (req, res) => {
-
-})
-
-
-app.get('/transactions')
 
 
 ///////////////////////////////////////////////////////////////////////
