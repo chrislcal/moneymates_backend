@@ -1,25 +1,13 @@
 // Importing libraries
 const {
-  SECRET_ID,
-  SECRET_KEY,
-  TOKEN_URL,
-  AGREEMENT_URL,
-  INSTITUTIONS_URL,
-  REQUISITION_URL,
-} = require("./utilities/keys");
+  SECRET_ID, SECRET_KEY, TOKEN_URL,
+  AGREEMENT_URL, INSTITUTIONS_URL, REQUISITION_URL,} = require("./utilities/keys");
+
 const {
-  saveUserData,
-  addTokens,
-  returnToken,
-  returnInstitutionId,
-  returnRequisitionId,
-  checkTokenStatus,
-  saveInstitutionId,
-  saveAgreementId,
-  saveRequisitionId,
-  returnAgreementId,
-  saveAccounts,
-} = require("./db");
+  saveUserData, addTokens, returnToken, returnInstitutionId,
+  returnRequisitionId, checkTokenStatus, saveInstitutionId,
+  saveAgreementId, saveRequisitionId, returnAgreementId,
+  returnAccounts, saveAccounts} = require("./db");
 
 const jwt_decode = require("jwt-decode");
 const axios = require("axios");
@@ -58,7 +46,7 @@ app.post("/save-user-data", async (req, res) => {
   }
 });
 
-////////////////////////////// NORDIGEN API /////////////////////////////////////////////////
+////////////////////////////// NORDIGEN SERVER REQUESTS //////////////////////////////////
 
 // Endpoint for getting access and refresh-tokens
 app.get("/get-token", async (req, res) => {
@@ -199,7 +187,7 @@ app.get("/save-requisition-id", async (req, res) => {
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        redirect: "http://localhost:3001/get-token",
+        redirect: "http://localhost:3000",
         institution_id: `${institutionId}`,
         agreement: `${agreementId}`,
       }),
@@ -213,8 +201,8 @@ app.get("/save-requisition-id", async (req, res) => {
   }
 });
 
-// Endpoint for listing accounts
-app.get("/get-accounts", async (req, res) => {
+// Endpoint for saving accounts
+app.get("/save-accounts", async (req, res) => {
   try {
     const token = req.headers["token"];
     const payload = jwt_decode(token);
@@ -223,9 +211,10 @@ app.get("/get-accounts", async (req, res) => {
     const requisitionId = await returnRequisitionId(user_id);
     const accessToken = await returnToken(user_id);
 
-    const request = await fetch(
+    const response = await fetch(
       `https://ob.nordigen.com/api/v2/requisitions/${requisitionId}`,
       {
+        method: 'GET',
         headers: {
           accept: "application/json",
           Authorization: `Bearer ${accessToken}`,
@@ -233,14 +222,54 @@ app.get("/get-accounts", async (req, res) => {
       }
     );
 
-    const response = await request.json();
-    const accounts = res.body.accounts;
+    const data = await response.json();
+    console.log(data);
+    const accounts = data.accounts;
     await saveAccounts(accounts, user_id);
-    res.json(response);
+    res.json(accounts);
   } catch (error) {
     console.log(error);
+    res.status(500).send(error.message);
   }
 });
+
+
+//      _   _  ____  _____  _____ _____ _____ ______ _   _ 
+//     | \ | |/ __ \|  __ \|  __ \_   _/ ____|  ____| \ | |
+//     |  \| | |  | | |__) | |  | || || |  __| |__  |  \| |
+//     | . ` | |  | |  _  /| |  | || || | |_ |  __| | . ` |
+//     | |\  | |__| | | \ \| |__| || || |__| | |____| |\  |
+//     |_| \_|\____/|_|  \_\_____/_____\_____|______|_| \_|
+
+/////////////////////// NORDIGEN FRONTEND API ENDPOINTS ////////////////////  
+
+// Get all user accounts 
+app.get('/user-accounts', async (req, res) => {
+
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const accounts = await returnAccounts(user_id);
+
+    res.json(accounts);
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+})
+
+
+
+// Get account details
+app.get('/account-details', (req, res) => {
+
+})
+
+
+app.get('/transactions')
+
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -248,3 +277,5 @@ app.get("/get-accounts", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
+
+
