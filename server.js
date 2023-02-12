@@ -367,6 +367,8 @@ app.post('/save-goal', async(req, res) => {
 
     await saveGoal(saveData, user_id);
 
+    res.send('Goal saved successfully')
+
   } catch (error) {
     res.status(500).send(error.message);
   }
