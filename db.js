@@ -82,11 +82,20 @@ const saveRequisitionId = async (id, user_id) => {
 };
 
 const saveAccounts = async (accounts, user_id) => {
-  for (let account of accounts) {
-    await pool.query(`
+  console.log('saveAccounts function called');
+
+  const userExists = await pool.query(`
+    SELECT user_id FROM accounts
+    WHERE user_id = $1`, [user_id]);
+
+  if (userExists.rows.length === 0) {
+    for (let account of accounts) {
+      await pool.query(`
         INSERT INTO accounts (user_id, account)
-        VALUES ($1, $2)
-        `,[user_id, account]);
+        VALUES ($1, $2)`, [user_id, account]);
+    }
+  } else {
+    console.log(`User with id ${user_id} already exists in the table, skipping insert.`);
   }
 };
 
@@ -133,15 +142,40 @@ const returnRequisitionId = async (user_id) => {
 };
 
 const returnAccounts = async (user_id) => {
+  console.log('returnAccounts function called')
   try {
     const result = await pool.query(`
     SELECT account
     FROM accounts
     WHERE user_id = $1`,[user_id]);
 
-    return result.rows.account;
-  } catch (error) {}
+    return result.rows.map(row => row.account);
+  } catch (error) {
+    console.log(error);
+    return [];
+  }
 };
+
+////////////CRUD///////////////
+const saveGoal = async(user_id, saveData) => {
+  console.log('db.js: saveGoal function called')
+  try {
+    const result = await pool.query(`
+    INSERT INTO savingsgoals (name, description, amount, account, user_id)
+    VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (name) DO NOTHING`,
+    [saveData.name, saveData.description,
+     saveData.amount, saveData.account, user_id]);
+
+    if (result.rowCount === 0) {
+      throw new Error(`A savings goal with the name "${saveData.name}" already exists`);
+    }
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -158,4 +192,5 @@ module.exports = {
   returnAccounts,
   saveAccounts,
   saveUserData,
+  saveGoal
 };
