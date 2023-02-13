@@ -7,7 +7,7 @@ const {
   saveUserData, addTokens, returnToken, returnInstitutionId,
   returnRequisitionId, checkTokenStatus, saveInstitutionId,
   saveAgreementId, saveRequisitionId, returnAgreementId,
-  returnAccounts, saveAccounts, saveGoal} = require("./db");
+  returnAccounts, saveAccounts, saveGoal, returnGoals} = require("./db");
 
 const jwt_decode = require("jwt-decode");
 const axios = require("axios");
@@ -41,6 +41,7 @@ app.post("/save-user-data", async (req, res) => {
       nickname,
     };
     await saveUserData(userData);
+    res.send({message: "saved user data"})
   } catch (error) {
     res.status(500).send(error.message);
   }
@@ -359,7 +360,7 @@ app.post('/save-goal', async(req, res) => {
 
   const {name, description, amount, account} = req.body;
   const saveData = {name, description, amount, account}
-
+  console.log(saveData, req.body)
   try {
     const token = req.headers["token"];
     const payload = jwt_decode(token);
@@ -367,8 +368,22 @@ app.post('/save-goal', async(req, res) => {
 
     await saveGoal(saveData, user_id);
 
-    res.send('Goal saved successfully')
+    res.json({"status": 'Goal saved successfully'})
 
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+app.get('/get-goals', async(req, res) => {
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const response = await returnGoals(user_id);
+    
+    res.status(200).json(response);
   } catch (error) {
     res.status(500).send(error.message);
   }

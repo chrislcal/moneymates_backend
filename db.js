@@ -157,24 +157,35 @@ const returnAccounts = async (user_id) => {
 };
 
 ////////////CRUD///////////////
-const saveGoal = async(user_id, saveData) => {
-  console.log('db.js: saveGoal function called')
+const saveGoal = async(saveData, user_id) => {
+  console.log('db.js: saveGoal function called', saveData)
   try {
     const result = await pool.query(`
     INSERT INTO savingsgoals (name, description, amount, account, user_id)
-    VALUES ($1, $2, $3, $4, $5)
-    ON CONFLICT (name) DO NOTHING`,
+    VALUES ($1, $2, $3, $4, $5)`,
     [saveData.name, saveData.description,
      saveData.amount, saveData.account, user_id]);
 
-    if (result.rowCount === 0) {
-      throw new Error(`A savings goal with the name "${saveData.name}" already exists`);
-    }
   } catch (error) {
     console.log(error);
     throw error;
   }
 }
+
+const returnGoals = async (user_id) => {
+  try {
+    const result = await pool.query(`
+    SELECT name, description, amount, account
+    FROM savingsgoals
+    WHERE user_id = $1`, [user_id]);
+    return result.rows.map(row => [row.name, row.description, row.amount, row.account]);
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
+
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -192,5 +203,6 @@ module.exports = {
   returnAccounts,
   saveAccounts,
   saveUserData,
-  saveGoal
+  saveGoal, 
+  returnGoals
 };
