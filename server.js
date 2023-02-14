@@ -355,6 +355,55 @@ app.get("/balances", async (req, res) => {
   }
 });
 
+app.get('/universal', async(req, res) => {
+  try {
+    const responseData = []
+
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const accounts = await returnAccounts(user_id);
+    console.log(accounts);
+    const accessToken = await returnToken(user_id);
+
+    for(let account of accounts) {
+      const balancesRequest = await fetch(`https://ob.nordigen.com/api/v2/accounts/${account}/balances`,
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const balancesResponse = await balancesRequest.json();
+
+        const detailsRequest = await fetch(`https://ob.nordigen.com/api/v2/accounts/${account}/details`,
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const detailsResponse = await detailsRequest.json();
+
+        responseData.push({
+          balances: balancesResponse.balances[0],
+          details: detailsResponse.account
+        });
+      }
+      
+      res.json(responseData);
+    
+  } catch (error) {
+    res.status(500).send(error);
+  }
+})
+
+
 
 app.post('/save-goal', async(req, res) => {
 
@@ -374,6 +423,8 @@ app.post('/save-goal', async(req, res) => {
     res.status(500).send(error.message);
   }
 });
+
+
 
 app.get('/get-goals', async(req, res) => {
   try {

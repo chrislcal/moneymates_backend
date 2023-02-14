@@ -175,7 +175,7 @@ const saveGoal = async(saveData, user_id) => {
 const returnGoals = async (user_id) => {
   try {
     const result = await pool.query(`
-    SELECT name, description, amount, account
+    SELECT name, description, amount, account, user_id
     FROM savingsgoals
     WHERE user_id = $1`, [user_id]);
     return result.rows.map(row => [row.name, row.description, row.amount, row.account]);

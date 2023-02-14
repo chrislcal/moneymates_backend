@@ -5,8 +5,8 @@ const INSTITUTIONS_URL = "https://ob.nordigen.com/api/v2/institutions/?country=n
 const AGREEMENT_URL = "https://ob.nordigen.com/api/v2/agreements/enduser/"
 const REQUISITION_URL = "https://ob.nordigen.com/api/v2/requisitions/"
 
-const SECRET_ID = "caa9d9cb-d91a-43eb-97e4-041808e12dac"
-const SECRET_KEY = "985690499c5c588bd9c428c303be8b97b3d4da2fc63a4b2ac2ed1ff7633859ad541e97388b8353a628286c56879444b678286cc76a5aadae1e924304c226e55b"
+const SECRET_ID = "ad432c55-0097-4068-97c7-3adc9a8b8114"
+const SECRET_KEY = "3e8ddc3fd7665024f95331b55105e0ca5ef302a0b79d4039b806d7441ae10c8097dff680d4de53d88b73873ac11aade120e116b54684e63712a7657ffc7def65"
 
 const DATABASE_PASSWORD = 'Abc31097AbcBca65652Bca';
 
