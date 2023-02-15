@@ -203,6 +203,20 @@ const returnGoalByID = async (user_id, id) => {
   }
 }
 
+const deleteGoalByID = async (user_id, id) => {
+  try {
+    const result = await pool.query(`
+    DELETE 
+    FROM savingsgoals
+    WHERE user_id = $1
+    AND id = $2
+    `, [user_id, id])
+
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -222,5 +236,6 @@ module.exports = {
   saveUserData,
   saveGoal, 
   returnGoals, 
-  returnGoalByID
+  returnGoalByID, 
+  deleteGoalByID
 };

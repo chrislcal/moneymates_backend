@@ -7,7 +7,8 @@ const {
   saveUserData, addTokens, returnToken, returnInstitutionId,
   returnRequisitionId, checkTokenStatus, saveInstitutionId,
   saveAgreementId, saveRequisitionId, returnAgreementId,
-  returnAccounts, saveAccounts, saveGoal, returnGoals, returnGoalByID} = require("./db");
+  returnAccounts, saveAccounts, saveGoal, returnGoals, returnGoalByID, 
+  deleteGoalByID} = require("./db");
 
 const jwt_decode = require("jwt-decode");
 const axios = require("axios");
@@ -450,7 +451,25 @@ app.get("/goals/:id", async(req, res) => {
     const {id} = req.params;
     const getOneGoal = await returnGoalByID(user_id, id);
 
-    res.json(getOneGoal)
+    res.json([getOneGoal])
+
+  } catch (error) {
+    res.status(500).send(error)
+  }
+})^
+
+app.delete("/goals/:id", async(req, res) => {
+  try {
+
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const {id} = req.params;
+
+    await deleteGoalByID(user_id, id);
+
+    res.send('Goal was deleted')
 
   } catch (error) {
     res.status(500).send(error)
