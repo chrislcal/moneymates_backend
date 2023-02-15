@@ -175,16 +175,33 @@ const saveGoal = async(saveData, user_id) => {
 const returnGoals = async (user_id) => {
   try {
     const result = await pool.query(`
-    SELECT name, description, amount, account, user_id
+    SELECT id, name, description, amount, account, user_id
     FROM savingsgoals
     WHERE user_id = $1`, [user_id]);
-    return result.rows.map(row => [row.name, row.description, row.amount, row.account]);
+    return result.rows.map(row => [row.id, row.name, row.description, row.amount, row.account]);
   } catch (error) {
     console.log(error);
     return null;
   }
 }
 
+
+const returnGoalByID = async (user_id, id) => {
+  console.log('Returngoal function has runned')
+  try {
+    const result = await pool.query(`
+    SELECT *
+    FROM savingsgoals
+    WHERE user_id = $1
+    AND id = $2
+    `, [user_id, id])
+
+    return result.rows[0]
+
+  } catch (error) {
+    console.error(error)
+  }
+}
 
 
 
@@ -204,5 +221,6 @@ module.exports = {
   saveAccounts,
   saveUserData,
   saveGoal, 
-  returnGoals
+  returnGoals, 
+  returnGoalByID
 };

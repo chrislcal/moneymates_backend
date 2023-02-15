@@ -7,7 +7,7 @@ const {
   saveUserData, addTokens, returnToken, returnInstitutionId,
   returnRequisitionId, checkTokenStatus, saveInstitutionId,
   saveAgreementId, saveRequisitionId, returnAgreementId,
-  returnAccounts, saveAccounts, saveGoal, returnGoals} = require("./db");
+  returnAccounts, saveAccounts, saveGoal, returnGoals, returnGoalByID} = require("./db");
 
 const jwt_decode = require("jwt-decode");
 const axios = require("axios");
@@ -437,6 +437,23 @@ app.get('/get-goals', async(req, res) => {
     res.status(200).json(response);
   } catch (error) {
     res.status(500).send(error.message);
+  }
+})
+
+app.get("/goals/:id", async(req, res) => {
+  try {
+
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const {id} = req.params;
+    const getOneGoal = await returnGoalByID(user_id, id);
+
+    res.json(getOneGoal)
+
+  } catch (error) {
+    res.status(500).send(error)
   }
 })
 
