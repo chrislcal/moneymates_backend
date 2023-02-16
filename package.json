@@ -7,5 +7,26 @@
     "jwt-decode": "^3.1.2",
     "nodemon": "^2.0.20",
     "pg": "^8.9.0"
-  }
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "name": "moneymates_backend",
+  "version": "1.0.0",
+  "main": "db.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrislcal/moneymates_backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chrislcal/moneymates_backend/issues"
+  },
+  "homepage": "https://github.com/chrislcal/moneymates_backend#readme",
+  "description": ""
 }
