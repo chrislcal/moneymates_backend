@@ -1,13 +1,16 @@
+require('dotenv').config()
+
 // Importing libraries
 const {
   SECRET_ID, SECRET_KEY, TOKEN_URL,
-  AGREEMENT_URL, INSTITUTIONS_URL, REQUISITION_URL,} = require("./utilities/keys");
+  AGREEMENT_URL, INSTITUTIONS_URL, REQUISITION_URL, FRONTEND_URL} = require("./utilities/keys");
 
 const {
   saveUserData, addTokens, returnToken, returnInstitutionId,
   returnRequisitionId, checkTokenStatus, saveInstitutionId,
   saveAgreementId, saveRequisitionId, returnAgreementId,
-  returnAccounts, saveAccounts} = require("./db");
+  returnAccounts, saveAccounts, saveGoal, returnGoals, returnGoalByID, 
+  deleteGoalByID} = require("./db");
 
 const jwt_decode = require("jwt-decode");
 const axios = require("axios");
@@ -41,6 +44,7 @@ app.post("/save-user-data", async (req, res) => {
       nickname,
     };
     await saveUserData(userData);
+    res.send({message: "saved user data"})
   } catch (error) {
     res.status(500).send(error.message);
   }
@@ -187,7 +191,7 @@ app.get("/save-requisition-id", async (req, res) => {
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        redirect: "http://localhost:3000",
+        redirect: `${FRONTEND_URL}`,
         institution_id: `${institutionId}`,
         agreement: `${agreementId}`,
       }),
@@ -234,17 +238,15 @@ app.get("/save-accounts", async (req, res) => {
 });
 
 
-//      _   _  ____  _____  _____ _____ _____ ______ _   _ 
-//     | \ | |/ __ \|  __ \|  __ \_   _/ ____|  ____| \ | |
-//     |  \| | |  | | |__) | |  | || || |  __| |__  |  \| |
-//     | . ` | |  | |  _  /| |  | || || | |_ |  __| | . ` |
-//     | |\  | |__| | | \ \| |__| || || |__| | |____| |\  |
-//     |_| \_|\____/|_|  \_\_____/_____\_____|______|_| \_|
 
-/////////////////////// NORDIGEN FRONTEND API ENDPOINTS ////////////////////  
 
-// Get all user accounts 
-app.get('/user-accounts', async (req, res) => {
+// ─█▀▀█ ░█▀▀█ ▀█▀ 　 ░█▀▀▀ ░█▄─░█ ░█▀▀▄ ░█▀▀█ ░█▀▀▀█ ▀█▀ ░█▄─░█ ▀▀█▀▀ ░█▀▀▀█ 
+// ░█▄▄█ ░█▄▄█ ░█─ 　 ░█▀▀▀ ░█░█░█ ░█─░█ ░█▄▄█ ░█──░█ ░█─ ░█░█░█ ─░█── ─▀▀▀▄▄ 
+// ░█─░█ ░█─── ▄█▄ 　 ░█▄▄▄ ░█──▀█ ░█▄▄▀ ░█─── ░█▄▄▄█ ▄█▄ ░█──▀█ ─░█── ░█▄▄▄█
+
+
+// Get account details
+app.get("/details", async (req, res) => {
 
   try {
     const token = req.headers["token"];
@@ -252,23 +254,229 @@ app.get('/user-accounts', async (req, res) => {
     const user_id = payload.sub;
 
     const accounts = await returnAccounts(user_id);
+    const accessToken = await returnToken(user_id);
 
-    res.json(accounts);
+    const detailsData = [];
+    for (let account of accounts) {
+      try {
+        const detailsRequest = await fetch(`https://ob.nordigen.com/api/v2/accounts/${account}/details`,
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const details = await detailsRequest.json();
+        console.log(`details: ${details}`)
 
+        detailsData.push({ details: details.account });
+      } catch (error) {
+        console.error(`Error getting details for account ${account}: ${error.message}`)
+      }
+    }
+
+    res.json(detailsData);
   } catch (error) {
     res.status(500).send(error.message);
+  }
+});
+
+
+// Get transaction details
+app.get("/transactions", async (req, res) => {
+
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const accounts = await returnAccounts(user_id);
+    const accessToken = await returnToken(user_id);
+
+    const transactionsData = {};
+
+    for (let account of accounts) {
+      try {
+        const transactionsRequest = await fetch(`https://ob.nordigen.com/api/v2/accounts/${account}/transactions`,
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const transactions = await transactionsRequest.json();
+        console.log(`transactions: ${transactions}`)
+
+        transactionsData[account] = transactions;
+      } catch (error) {
+        console.error(`Error getting transactions for account ${account}: ${error.message}`)
+      }
+    }
+
+    res.json(transactionsData);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+// Get account balances
+app.get("/balances", async (req, res) => {
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const accounts = await returnAccounts(user_id);
+    const accessToken = await returnToken(user_id);
+
+    let balancesData = [];
+    
+    for (let account of accounts) {
+
+        const balancesRequest = await fetch(`https://ob.nordigen.com/api/v2/accounts/${account}/balances`,
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const data = await balancesRequest.json();
+        balancesData.push(data.balances[0]);
+        console.log('balancedata:',data)
+    }
+
+    res.json(balancesData);
+  } catch (error) {
+    console.log(error)
+    res.status(500).send(error.message);
+  }
+});
+
+app.get('/universal', async(req, res) => {
+  try {
+    const responseData = []
+
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const accounts = await returnAccounts(user_id);
+    console.log(accounts);
+    const accessToken = await returnToken(user_id);
+
+    for(let account of accounts) {
+      const balancesRequest = await fetch(`https://ob.nordigen.com/api/v2/accounts/${account}/balances`,
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const balancesResponse = await balancesRequest.json();
+
+        const detailsRequest = await fetch(`https://ob.nordigen.com/api/v2/accounts/${account}/details`,
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const detailsResponse = await detailsRequest.json();
+
+        responseData.push({
+          balances: balancesResponse.balances[0],
+          details: detailsResponse.account
+        });
+      }
+      
+      res.json(responseData);
+    
+  } catch (error) {
+    res.status(500).send(error);
   }
 })
 
 
 
-// Get account details
-app.get('/account-details', (req, res) => {
+app.post('/save-goal', async(req, res) => {
 
+  const {name, description, amount, account} = req.body;
+  const saveData = {name, description, amount, account}
+  console.log(saveData, req.body)
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    await saveGoal(saveData, user_id);
+
+    res.json({"status": 'Goal saved successfully'})
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+
+
+app.get('/get-goals', async(req, res) => {
+  try {
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const response = await returnGoals(user_id);
+    
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
 })
 
+app.get("/goals/:id", async(req, res) => {
+  try {
 
-app.get('/transactions')
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const {id} = req.params;
+    const getOneGoal = await returnGoalByID(user_id, id);
+
+    res.json([getOneGoal])
+
+  } catch (error) {
+    res.status(500).send(error)
+  }
+})^
+
+app.delete("/goals/:id", async(req, res) => {
+  try {
+
+    const token = req.headers["token"];
+    const payload = jwt_decode(token);
+    const user_id = payload.sub;
+
+    const {id} = req.params;
+
+    await deleteGoalByID(user_id, id);
+
+    res.send('Goal was deleted')
+
+  } catch (error) {
+    res.status(500).send(error)
+  }
+})
 
 
 ///////////////////////////////////////////////////////////////////////

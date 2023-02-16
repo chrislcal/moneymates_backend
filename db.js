@@ -1,12 +1,10 @@
 const { Pool } = require("pg");
-const { DATABASE_PASSWORD } = require("./utilities/keys");
+const { DATABASE_URL } = require("./utilities/keys");
+
+console.log({DATABASE_URL})
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "moneymates",
-  password: DATABASE_PASSWORD,
-  port: 5432,
+  connectionString: DATABASE_URL
 });
 
 //////////////AUTH0//////////////////////////////////////////////
@@ -82,11 +80,20 @@ const saveRequisitionId = async (id, user_id) => {
 };
 
 const saveAccounts = async (accounts, user_id) => {
-  for (let account of accounts) {
-    await pool.query(`
+  console.log('saveAccounts function called');
+
+  const userExists = await pool.query(`
+    SELECT user_id FROM accounts
+    WHERE user_id = $1`, [user_id]);
+
+  if (userExists.rows.length === 0) {
+    for (let account of accounts) {
+      await pool.query(`
         INSERT INTO accounts (user_id, account)
-        VALUES ($1, $2)
-        `,[user_id, account]);
+        VALUES ($1, $2)`, [user_id, account]);
+    }
+  } else {
+    console.log(`User with id ${user_id} already exists in the table, skipping insert.`);
   }
 };
 
@@ -133,15 +140,82 @@ const returnRequisitionId = async (user_id) => {
 };
 
 const returnAccounts = async (user_id) => {
+  console.log('returnAccounts function called')
   try {
     const result = await pool.query(`
     SELECT account
     FROM accounts
     WHERE user_id = $1`,[user_id]);
 
-    return result.rows.account;
-  } catch (error) {}
+    return result.rows.map(row => row.account);
+  } catch (error) {
+    console.log(error);
+    return [];
+  }
 };
+
+////////////CRUD///////////////
+const saveGoal = async(saveData, user_id) => {
+  console.log('db.js: saveGoal function called', saveData)
+  try {
+    const result = await pool.query(`
+    INSERT INTO savingsgoals (name, description, amount, account, user_id)
+    VALUES ($1, $2, $3, $4, $5)`,
+    [saveData.name, saveData.description,
+     saveData.amount, saveData.account, user_id]);
+
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+const returnGoals = async (user_id) => {
+  try {
+    const result = await pool.query(`
+    SELECT id, name, description, amount, account, user_id
+    FROM savingsgoals
+    WHERE user_id = $1`, [user_id]);
+    return result.rows.map(row => [row.id, row.name, row.description, row.amount, row.account]);
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
+
+const returnGoalByID = async (user_id, id) => {
+  console.log('Returngoal function has runned')
+  try {
+    const result = await pool.query(`
+    SELECT *
+    FROM savingsgoals
+    WHERE user_id = $1
+    AND id = $2
+    `, [user_id, id])
+
+    return result.rows[0]
+
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const deleteGoalByID = async (user_id, id) => {
+  try {
+    const result = await pool.query(`
+    DELETE 
+    FROM savingsgoals
+    WHERE user_id = $1
+    AND id = $2
+    `, [user_id, id])
+
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -158,4 +232,8 @@ module.exports = {
   returnAccounts,
   saveAccounts,
   saveUserData,
+  saveGoal, 
+  returnGoals, 
+  returnGoalByID, 
+  deleteGoalByID
 };
