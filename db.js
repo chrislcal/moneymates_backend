@@ -1,12 +1,10 @@
 const { Pool } = require("pg");
-const { DATABASE_PASSWORD } = require("./utilities/keys");
+const { DATABASE_URL } = require("./utilities/keys");
+
+console.log({DATABASE_URL})
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "moneymates",
-  password: DATABASE_PASSWORD,
-  port: 5432,
+  connectionString: DATABASE_URL
 });
 
 //////////////AUTH0//////////////////////////////////////////////

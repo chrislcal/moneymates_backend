@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 // Importing libraries
 const {
   SECRET_ID, SECRET_KEY, TOKEN_URL,
