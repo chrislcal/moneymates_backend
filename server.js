@@ -3,7 +3,7 @@ require('dotenv').config()
 // Importing libraries
 const {
   SECRET_ID, SECRET_KEY, TOKEN_URL,
-  AGREEMENT_URL, INSTITUTIONS_URL, REQUISITION_URL,} = require("./utilities/keys");
+  AGREEMENT_URL, INSTITUTIONS_URL, REQUISITION_URL, FRONTEND_URL} = require("./utilities/keys");
 
 const {
   saveUserData, addTokens, returnToken, returnInstitutionId,
@@ -191,7 +191,7 @@ app.get("/save-requisition-id", async (req, res) => {
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        redirect: "http://localhost:3000",
+        redirect: `${FRONTEND_URL}`,
         institution_id: `${institutionId}`,
         agreement: `${agreementId}`,
       }),
