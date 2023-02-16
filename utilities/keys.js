@@ -1,9 +1,9 @@
 
 
-const TOKEN_URL = process.env.TOKEN_URL;
-const INSTITUTIONS_URL = process.env.INSTITUTIONS_URL
-const AGREEMENT_URL = process.env.AGREEMENT_URL
-const REQUISITION_URL = process.env.REQUISITION_URL
+const TOKEN_URL="https://ob.nordigen.com/api/v2/token/new/"
+const INSTITUTIONS_URL="https://ob.nordigen.com/api/v2/institutions/?country=no"
+const AGREEMENT_URL="https://ob.nordigen.com/api/v2/agreements/enduser/"
+const REQUISITION_URL="https://ob.nordigen.com/api/v2/requisitions/"
 
 const SECRET_ID = process.env.SECRET_ID
 const SECRET_KEY = process.env.SECRET_KEY
